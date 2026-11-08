@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Student Portal</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#2f4f9f">
+<style>
+:root{--bg:#dfe6f3;--tx:#142040;--card:#fff;--bd:#c5cfe4;--bar:#2f4f9f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1526;--tx:#e6ecfa;--card:#18213a;--bd:#2c3a5e}}
+:root[data-theme="dark"]{--bg:#0e1526;--tx:#e6ecfa;--card:#18213a;--bd:#2c3a5e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:76px}
+header{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.logo{width:44px;height:44px;border-radius:50%;background:#2f4f9f;color:#fff;display:grid;place-items:center;font-weight:700;font-size:20px}
+header b{display:block;font-size:17px}header small{opacity:.7}
+main{padding:0 14px 14px;max-width:560px;margin:auto}
+.t{background:linear-gradient(135deg,#2d4f9e,#1e78d8);color:#fff;border-radius:14px;padding:14px;box-shadow:0 3px 8px rgba(20,40,90,.25);border:0;text-align:left;font:inherit;width:100%}
+.hero{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.hero img,.ph{width:78px;height:78px;border-radius:50%;object-fit:cover;background:#cfd8ee;flex:none}
+.hero table td{padding:1px 6px 1px 0;font-size:15px}
+.nm{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.35);letter-spacing:.06em;font-weight:600}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.g .t{min-height:96px;display:flex;flex-direction:column;justify-content:space-between;text-align:right;cursor:pointer}
+.g .t .i{font-size:26px;text-align:left}.g .t .v{font-size:26px;font-weight:600}.g .t .l{font-size:15px;opacity:.95}
+.yl{color:#ffe53b;font-size:13px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--bar);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:0;border:0;color:#fff;padding:10px 0;font:inherit;font-size:14px;opacity:.85}
+nav button.on{opacity:1;color:#7fd0ff}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+h2{font-size:20px;margin:6px 0 12px}
+label{display:block;font-size:13px;opacity:.8;margin:10px 0 4px}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit}
+textarea{min-height:90px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.b{display:inline-block;background:#2f4f9f;color:#fff;border:0;border-radius:22px;padding:11px 22px;font:inherit;font-weight:600;margin:10px 6px 0 0;cursor:pointer}
+.b.s{background:transparent;color:var(--tx);border:1px solid var(--bd)}.b.r{background:#b3261e}
+.row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}
+.wrap{overflow-x:auto}table.r{border-collapse:collapse;width:100%;text-align:center}
+table.r th,table.r td{border:1px solid var(--tx);padding:8px 6px}
+.red{color:#d32020;font-weight:700}
+.hint{font-size:12.5px;opacity:.75;line-height:1.45}
+.empty{text-align:center;opacity:.7;padding:24px 0}
+</style></head>
+<body>
+<div id="app"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ====== STEP: paste YOUR Firebase config here (Project settings > Your apps > Web) ======
+const CFG={apiKey:"PASTE_HERE",authDomain:"PASTE_HERE",projectId:"PASTE_HERE",appId:"PASTE_HERE"};
+const DOM='@portal.example.com';
+firebase.initializeApp(CFG);const auth=firebase.auth(),fs=firebase.firestore();
+let D={school:'My School',students:[]};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+let S={v:'login',u:null,a:null,adm:false};
+const go=(v,a)=>{S.v=v;S.a=a;render();scrollTo(0,0)};
+const lines=t=>(t||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.split('|').map(x=>x.trim()));
+const num=x=>isNaN(parseFloat(x))?0:parseFloat(x);
+function exams(t){const r=[];lines(t).forEach(p=>{if(p[0][0]=='#'){r.push({n:p[0].slice(1).trim(),h:p[1]||'',pass:num(p[2]||33),s:[]})}else if(r.length){r[r.length-1].s.push({c:p[0],cq:p[1]||'-',mcq:p[2]||'-'})}});return r}
+const me=()=>D.students[S.u];
+function shell(body,nav){
+ return `<header><div class="logo">${esc((D.school||'S')[0])}</div><div><b>${esc(D.school)}</b><small>${S.adm?'Admin panel':'Student portal'}</small></div></header><main>${body}</main>
+ <nav><button class="${nav=='p'?'on':''}" onclick="go('${S.adm?'admin':'profile'}')">👤<br>${S.adm?'Admin':'Profile'}</button><button class="${nav=='h'?'on':''}" onclick="go('${S.adm?'admin':'home'}')">🏠<br>Home</button><button onclick="logout()">⎋<br>Logout</button></nav>`}
+function tile(i,l,v,view,foot){return `<button class="t" onclick="go('${view}')"><span class="i">${i}</span><span class="l">${l}</span>${v!==''?`<span class="v">${v}</span>`:''}${foot||''}</button>`}
+function back(to){return `<button class="b s" onclick="go('${to||'home'}')">‹ Back</button>`}
+function render(){
+ const A=$('app');let h='';const s=S.u!=null?me():null;
+ if(S.v=='login'){
+  A.innerHTML=`<main><div class="c" style="margin-top:40px"><div class="logo" style="margin:0 auto 10px;width:64px;height:64px;font-size:28px">${esc((D.school||'S')[0])}</div><h2 style="text-align:center">${esc(D.school)}</h2>
+  <label>Student ID (admin: type admin)</label><input id="lid" inputmode="numeric" autocomplete="username"><label>Password</label><input id="lpw" type="password" autocomplete="current-password">
+  <button class="b" onclick="login()">Log in</button><p id="err" class="red"></p></div></main>`;return}
+ if(S.v=='home'){
+  h=`<div class="t hero" style="display:block;margin-bottom:14px"><div class="hero" style="margin:0">${s.photo?`<img src="${s.photo}" alt="">`:'<div class="ph"></div>'}<table><tr><td>Student ID</td><td>: ${esc(s.id)}</td></tr><tr><td>Class Roll</td><td>: ${esc(s.roll)}</td></tr><tr><td>Class</td><td>: ${esc(s.cls)}</td></tr><tr><td>Section</td><td>: ${esc(s.sec)}</td></tr><tr><td>Group</td><td>: ${esc(s.grp)}</td></tr></table></div><div class="nm">${esc(s.name).toUpperCase()}</div></div>
+  <div class="g">${tile('📅','Present',esc(s.present)+' Days','attend',`<span class="yl">▲ ${esc(s.total)} Days</span>`)}
+  ${tile('✏️','Exam',exams(s.exams).length,'exams')}${tile('৳','Due',esc(s.due),'pay')}${tile('🕘','Payment History','','pay')}
+  ${tile('✉️','Total SMS',lines(s.sms).length,'sms')}${tile('🗓️','Class Routine','','routine')}${tile('📝','Homework',lines(s.hw).length,'hw')}${tile('👤','Profile Update','','profile')}</div>`;
+  A.innerHTML=shell(h,'h');return}
+ if(S.v=='attend'){h=back()+`<div class="c"><h2>Attendance</h2><div class="row"><span>Present</span><b>${esc(s.present)} days</b></div><div class="row"><span>Total working days</span><b>${esc(s.total)} days</b></div><div class="row"><span>Absent</span><b>${Math.max(0,num(s.total)-num(s.present))} days</b></div></div>`}
+ if(S.v=='exams'){const ex=exams(s.exams);h=back()+`<h2>Exams</h2>`+(ex.length?ex.map((e,i)=>`<button class="t" style="margin-bottom:12px;text-align:center;font-size:19px" onclick="go('result',${i})">${esc(e.n)}<br><span style="display:inline-block;background:#e1e9f7;color:#2f4f9f;border-radius:22px;padding:8px 20px;margin-top:12px;font-size:16px;font-weight:600">View Result ›</span></button>`).join(''):'<div class="empty">No exams yet.</div>')}
+ if(S.v=='result'){const e=exams(s.exams)[S.a];let tot=0;
+  const th=e.s.map(x=>`<th>${esc(x.c)}</th>`).join('');
+  const cq=e.s.map(x=>`<td>${esc(x.cq)}</td>`).join(''),mq=e.s.map(x=>`<td>${esc(x.mcq)}</td>`).join('');
+  const tt=e.s.map(x=>{const t=num(x.cq)+num(x.mcq);tot+=t;return `<td class="${t<e.pass?'red':''}">${t}</td>`}).join('');
+  h=back('exams')+`<div class="c"><h2>${esc(s.name)}</h2><div class="row"><span>Student ID</span><b>${esc(s.id)}</b></div><div class="row"><span>Class / Section</span><b>${esc(s.cls)} / ${esc(s.sec)}</b></div><div class="row"><span>Group</span><b>${esc(s.grp)}</b></div><div class="row"><span>Exam</span><b>${esc(e.n)}</b></div><div class="row"><span>Held</span><b>${esc(e.h)}</b></div></div>
+  <div class="c wrap"><h2>Result in Details</h2><table class="r"><tr><th>Marks Type</th>${th}</tr><tr><th>CQ</th>${cq}</tr><tr><th>MCQ</th>${mq}</tr><tr><th>Total</th>${tt}</tr></table><p><b>Total Marks: ${tot}</b></p><p class="hint">Marks below ${e.pass} in a subject show in red.</p></div>`}
+ if(S.v=='pay'){const p=lines(s.pay);h=back()+`<div class="c"><h2>Due: ৳${esc(s.due)}</h2></div><div class="c"><h2>Payment History</h2>${p.length?p.map(x=>`<div class="row"><span>${esc(x[1])}<br><small>${esc(x[0])}</small></span><b>৳${esc(x[2])}</b></div>`).join(''):'<div class="empty">No payments yet.</div>'}</div>`}
+ if(S.v=='sms'){const p=lines(s.sms);h=back()+`<div class="c"><h2>Messages</h2>${p.length?p.map(x=>`<div class="row"><span>${esc(x[1])}<br><small>${esc(x[0])}</small></span></div>`).join(''):'<div class="empty">No messages.</div>'}</div>`}
+ if(S.v=='routine'){const p=lines(s.routine);h=back()+`<div class="c"><h2>Class Routine</h2>${p.length?p.map(x=>`<div class="row"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`).join(''):'<div class="empty">No routine added.</div>'}</div>`}
+ if(S.v=='hw'){const p=lines(s.hw);h=back()+`<div class="c"><h2>Homework</h2>${p.length?p.map(x=>`<div class="row"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`).join(''):'<div class="empty">No homework. 🎉</div>'}</div>`}
+ if(S.v=='profile'){h=`<div class="c"><h2>Profile</h2>${s.photo?`<img src="${s.photo}" width="96" height="96" style="border-radius:50%;object-fit:cover" alt="">`:''}${[['Name',s.name],['Father',s.father],['Mother',s.mother],['Student ID',s.id],['Class',s.cls],['Section',s.sec],['Group',s.grp],['Session',s.ses],['Gender',s.gen]].map(x=>`<div class="row"><span>${x[0]}</span><b>${esc(x[1])}</b></div>`).join('')}</div>
+  <div class="c"><h2>Change password</h2><label>New password</label><input id="np" type="password"><button class="b" onclick="chPw()">Save</button></div>`;A.innerHTML=shell(h,'p');return}
+ if(S.v=='admin'){
+  h=`<div class="c"><h2>School</h2><label>School name</label><input id="sn" value="${esc(D.school)}"><button class="b" onclick="saveSchool()">Save</button></div>
+  <div class="c"><h2>Students (${D.students.length})</h2>${D.students.map((x,i)=>`<div class="row"><span>${esc(x.name)}<br><small>ID ${esc(x.id)} · Class ${esc(x.cls)}</small></span><button class="b s" style="margin:0" onclick="go('edit',${i})">Edit</button></div>`).join('')||'<div class="empty">No students yet.</div>'}<button class="b" onclick="go('edit',-1)">+ Add student</button></div>`;
+  A.innerHTML=shell(h,'h');return}
+ if(S.v=='edit'){const n=S.a<0,x=n?{pw:'',present:0,total:0,due:0}:D.students[S.a];const f=(k,l,t)=>`<label>${l}</label><input id="f_${k}" value="${esc(x[k])}"${t?` type="${t}"`:''}>`;const ta=(k,l,hint)=>`<label>${l}</label><textarea id="f_${k}">${esc(x[k])}</textarea><div class="hint">${hint}</div>`;
+  h=`<div class="c"><h2>${n?'Add':'Edit'} student</h2>${f('name','Full name')}${f('father',"Father's name")}${f('mother',"Mother's name")}${f('id','Student ID (used to log in)')}${n?f('pw','Password (min 6 characters)'):''}${f('roll','Class roll')}${f('cls','Class')}${f('sec','Section')}${f('grp','Group')}${f('ses','Session')}${f('gen','Gender')}${f('present','Days present','number')}${f('total','Total days','number')}${f('due','Due amount','number')}
+  <label>Photo</label><input type="file" accept="image/*" onchange="pic(this)">
+  ${ta('pay','Payments','One per line: date | purpose | amount<br>01-Nov-26 | Monthly fee | 1500')}${ta('sms','SMS','One per line: date | message')}${ta('routine','Routine','One per line: day | subjects<br>Sunday | BAN, ENG, PHY')}${ta('hw','Homework','One per line: subject | task')}
+  ${ta('exams','Exams & results','Start each exam with # then name | held | pass mark. Then one line per subject: code | CQ | MCQ (use - for none)<br># Quiz Exam 1 | Nov-25 | 33<br>BAN-101 | 12 | 15<br>ENG-107 | 29 | -')}
+  <button class="b" onclick="saveStu()">Save</button><button class="b s" onclick="go('admin')">Cancel</button>${n?'':'<button class="b r" onclick="if(confirm(\'Delete this student?\')){delStu()}">Delete</button>'}</div>`;
+  A.innerHTML=shell(h,'h');return}
+ A.innerHTML=shell(h,'h')}
+let PH=null;
+function pic(el){const f=el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=200;const g=c.getContext('2d'),m=Math.min(i.width,i.height);g.drawImage(i,(i.width-m)/2,(i.height-m)/2,m,m,0,0,200,200);PH=c.toDataURL('image/jpeg',.8)};i.src=r.result};r.readAsDataURL(f)}
+function saveStu(){const o={};['name','father','mother','id','roll','cls','sec','grp','ses','gen','present','total','due','pay','sms','routine','hw','exams'].forEach(k=>o[k]=$('f_'+k).value.trim());
+ if(!o.id||!o.name){alert('Name and Student ID are required');return}
+ o.photo=PH||(S.a>=0?D.students[S.a].photo:'')||'';
+ const done=()=>fs.doc('students/'+o.id).set(o).then(()=>{PH=null;return loadAll()}).then(()=>go('admin')).catch(e=>alert(e.message));
+ if(S.a<0){const pw=$('f_pw').value;if(pw.length<6){alert('Password must be at least 6 characters');return}
+  const sec=firebase.apps.find(a=>a.name=='sec')||firebase.initializeApp(CFG,'sec');
+  sec.auth().createUserWithEmailAndPassword(o.id+DOM,pw).then(()=>sec.auth().signOut()).then(done).catch(e=>alert(e.message))}
+ else done()}
+const loadAll=()=>fs.collection('students').get().then(q=>{D.students=q.docs.map(d=>d.data()).sort((a,b)=>a.id>b.id?1:-1)});
+const saveSchool=()=>fs.doc('settings/main').set({school:$('sn').value}).then(()=>{D.school=$('sn').value;go('admin')}).catch(e=>alert(e.message));
+const delStu=()=>fs.doc('students/'+D.students[S.a].id).delete().then(loadAll).then(()=>go('admin')).catch(e=>alert(e.message));
+function login(){const id=$('lid').value.trim();$('err').textContent='Logging in...';
+ auth.signInWithEmailAndPassword(id+DOM,$('lpw').value).then(async()=>{
+  if(id=='admin'){await loadAll();S={v:'admin',u:null,a:null,adm:true}}
+  else{const d=await fs.doc('students/'+id).get();if(!d.exists){$('err').textContent='No data has been added for this ID yet.';return}D.students=[d.data()];S={v:'home',u:0,a:null,adm:false}}
+  render()}).catch(()=>$('err').textContent='Wrong Student ID or password.')}
+const logout=()=>{auth.signOut();D.students=[];S={v:'login',u:null,a:null,adm:false};render()};
+const chPw=()=>{const p=$('np').value;if(p.length<6){alert('Minimum 6 characters');return}auth.currentUser.updatePassword(p).then(()=>alert('Password changed')).catch(e=>alert(e.message))};
+fs.doc('settings/main').get().then(d=>{if(d.exists)D.school=d.data().school;render()}).catch(()=>{});
+render();
+</script></body></html>
