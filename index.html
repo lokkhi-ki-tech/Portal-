@@ -48,7 +48,7 @@ table.r th,table.r td{border:1px solid var(--tx);padding:8px 6px}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 // ====== STEP: paste YOUR Firebase config here (Project settings > Your apps > Web) ======
-const CFG={apiKey:"PASTE_HERE",authDomain:"PASTE_HERE",projectId:"PASTE_HERE",appId:"PASTE_HERE"};
+const CFG={apiKey:"AIzaSyAViLa5J4UrvlU7xWF6U_GUdXKjoqKqPgw",authDomain:"sinha-f142e.firebaseapp.com",projectId:"sinha-f142e",storageBucket:"sinha-f142e.firebasestorage.app",messagingSenderId:"92619890891",appId:"1:92619890891:web:3095cc662ea374fcc6fb4e"};
 const DOM='@portal.example.com';
 firebase.initializeApp(CFG);const auth=firebase.auth(),fs=firebase.firestore();
 let D={school:'My School',students:[]};
@@ -69,7 +69,7 @@ function render(){
  const A=$('app');let h='';const s=S.u!=null?me():null;
  if(S.v=='login'){
   A.innerHTML=`<main><div class="c" style="margin-top:40px"><div class="logo" style="margin:0 auto 10px;width:64px;height:64px;font-size:28px">${esc((D.school||'S')[0])}</div><h2 style="text-align:center">${esc(D.school)}</h2>
-  <label>Student ID (admin: type admin)</label><input id="lid" inputmode="numeric" autocomplete="username"><label>Password</label><input id="lpw" type="password" autocomplete="current-password">
+  <label>Student ID (admin: type admin)</label><input id="lid" type="text" inputmode="text" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username"><label>Password</label><input id="lpw" type="password" autocomplete="current-password">
   <button class="b" onclick="login()">Log in</button><p id="err" class="red"></p></div></main>`;return}
  if(S.v=='home'){
   h=`<div class="t hero" style="display:block;margin-bottom:14px"><div class="hero" style="margin:0">${s.photo?`<img src="${s.photo}" alt="">`:'<div class="ph"></div>'}<table><tr><td>Student ID</td><td>: ${esc(s.id)}</td></tr><tr><td>Class Roll</td><td>: ${esc(s.roll)}</td></tr><tr><td>Class</td><td>: ${esc(s.cls)}</td></tr><tr><td>Section</td><td>: ${esc(s.sec)}</td></tr><tr><td>Group</td><td>: ${esc(s.grp)}</td></tr></table></div><div class="nm">${esc(s.name).toUpperCase()}</div></div>
@@ -117,7 +117,7 @@ const loadAll=()=>fs.collection('students').get().then(q=>{D.students=q.docs.map
 const saveSchool=()=>fs.doc('settings/main').set({school:$('sn').value}).then(()=>{D.school=$('sn').value;go('admin')}).catch(e=>alert(e.message));
 const delStu=()=>fs.doc('students/'+D.students[S.a].id).delete().then(loadAll).then(()=>go('admin')).catch(e=>alert(e.message));
 function login(){const id=$('lid').value.trim();$('err').textContent='Logging in...';
- auth.signInWithEmailAndPassword(id+DOM,$('lpw').value).then(async()=>{
+ auth.signInWithEmailAndPassword(id.toLowerCase()+DOM,$('lpw').value).then(async()=>{
   if(id=='admin'){await loadAll();S={v:'admin',u:null,a:null,adm:true}}
   else{const d=await fs.doc('students/'+id).get();if(!d.exists){$('err').textContent='No data has been added for this ID yet.';return}D.students=[d.data()];S={v:'home',u:0,a:null,adm:false}}
   render()}).catch(()=>$('err').textContent='Wrong Student ID or password.')}
